@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
+	"log"
 	"os"
+	"path/filepath"
 )
 
 func main() {
@@ -46,6 +49,7 @@ func main() {
 	case "init":
 		initCmd.Parse(os.Args[2:])
 		fmt.Printf("%s has been invoked\n", os.Args[1])
+		createRepository()
 	case "log":
 		logCmd.Parse(os.Args[2:])
 		fmt.Printf("%s has been invoked\n", os.Args[1])
@@ -74,4 +78,74 @@ func main() {
 		fmt.Printf("%s subcommand is not recognized\n", os.Args[1])
 		os.Exit(1)
 	}
+}
+
+func createRepository() {
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	repo := new(GitRepository)
+	repo.init(wd)
+
+	_, err = os.Stat(repo.GitDir)
+	if !os.IsNotExist(err) {
+		log.Println(".git directory already exists")
+	} else {
+		objectsDir := fmt.Sprintf("%s/objects", repo.GitDir)
+		tagsDir := fmt.Sprintf("%s/refs/tags", repo.GitDir)
+		headsDir := fmt.Sprintf("%s/refs/heads", repo.GitDir)
+		descriptionFile := fmt.Sprintf("%s/description", repo.GitDir)
+		headFile := fmt.Sprintf("%s/HEAD", repo.GitDir)
+
+		err = os.MkdirAll(objectsDir, 0755)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = os.MkdirAll(tagsDir, 0755)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = os.MkdirAll(headsDir, 0755)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		file, err := os.Create(descriptionFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		writer := bufio.NewWriter(file)
+		_, err = writer.WriteString("Unnamed repository; edit this file 'description' to name the repository.\n")
+		if err != nil {
+			log.Fatal(err)
+		}
+		writer.Flush()
+
+		file, err = os.Create(headFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		writer = bufio.NewWriter(file)
+		_, err = writer.WriteString("ref: refs/heads/main\n")
+		if err != nil {
+			log.Fatal(err)
+		}
+		writer.Flush()
+	}
+}
+
+type GitRepository struct {
+	WorkTree string
+	GitDir   string
+}
+
+func (r *GitRepository) init(path string) {
+	r.WorkTree = path
+	r.GitDir = filepath.Join(path, ".git")
 }
