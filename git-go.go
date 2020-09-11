@@ -49,7 +49,19 @@ func main() {
 	case "init":
 		initCmd.Parse(os.Args[2:])
 		fmt.Printf("%s has been invoked\n", os.Args[1])
-		createRepository()
+		positionalArgs := initCmd.Args()
+		if len(positionalArgs) == 0 {
+			wd, err := os.Getwd()
+			if err != nil {
+				log.Fatal(err)
+			}
+			createRepository(wd)
+		} else if len(positionalArgs) == 1 {
+			createRepository(positionalArgs[0])
+		} else {
+			fmt.Println("too many arguments")
+			os.Exit(1)
+		}
 	case "log":
 		logCmd.Parse(os.Args[2:])
 		fmt.Printf("%s has been invoked\n", os.Args[1])
@@ -80,16 +92,11 @@ func main() {
 	}
 }
 
-func createRepository() {
-	wd, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
-	}
-
+func createRepository(path string) {
 	repo := new(GitRepository)
-	repo.init(wd)
+	repo.init(path)
 
-	_, err = os.Stat(repo.GitDir)
+	_, err := os.Stat(repo.GitDir)
 	if !os.IsNotExist(err) {
 		log.Println(".git directory already exists")
 	} else {
