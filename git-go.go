@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"gopkg.in/ini.v1"
 	"log"
 	"os"
 	"path/filepath"
@@ -105,6 +106,7 @@ func createRepository(path string) {
 		headsDir := fmt.Sprintf("%s/refs/heads", repo.GitDir)
 		descriptionFile := fmt.Sprintf("%s/description", repo.GitDir)
 		headFile := fmt.Sprintf("%s/HEAD", repo.GitDir)
+		configFile := fmt.Sprintf("%s/config", repo.GitDir)
 
 		err = os.MkdirAll(objectsDir, 0755)
 		if err != nil {
@@ -144,6 +146,47 @@ func createRepository(path string) {
 			log.Fatal(err)
 		}
 		writer.Flush()
+
+		cfg := ini.Empty(ini.LoadOptions{})
+
+		ini.PrettyFormat = false
+		ini.PrettyEqual = true
+		coreSection, err := cfg.NewSection("core")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		_, err = coreSection.NewKey("repositoryformatverion", "0")
+		if err != nil {
+			log.Fatal(err)
+
+		}
+		_, err = coreSection.NewKey("filemode", "true")
+		if err != nil {
+			log.Fatal(err)
+
+		}
+		_, err = coreSection.NewKey("bare", "false")
+		if err != nil {
+			log.Fatal(err)
+
+		}
+		_, err = coreSection.NewKey("logallrefupdates", "true")
+		if err != nil {
+			log.Fatal(err)
+
+		}
+		_, err = coreSection.NewKey("ignorecase", "true")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		_, err = coreSection.NewKey("precomposeunicode", "true")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		cfg.SaveToIndent(configFile, "    ")
 	}
 }
 
