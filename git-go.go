@@ -38,6 +38,13 @@ func main() {
 	case "cat-file":
 		catFileCmd.Parse(os.Args[2:])
 		fmt.Printf("%s has been invoked\n", os.Args[1])
+		positionalArgs := catFileCmd.Args()
+		if len(positionalArgs) != 2 {
+			fmt.Println("wrong number of arguments")
+			os.Exit(1)
+		} else {
+			catFile(positionalArgs[0], positionalArgs[1])
+		}
 	case "checkout":
 		checkoutCmd.Parse(os.Args[2:])
 		fmt.Printf("%s has been invoked\n", os.Args[1])
@@ -188,6 +195,11 @@ func createRepository(path string) {
 
 		cfg.SaveToIndent(configFile, "    ")
 	}
+}
+
+func catFile(objectType string, object string) {
+	fmt.Println(objectType)
+	fmt.Println(object)
 }
 
 type GitRepository struct {
