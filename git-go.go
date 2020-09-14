@@ -2,9 +2,11 @@ package main
 
 import (
 	"bufio"
+	"compress/zlib"
 	"flag"
 	"fmt"
 	"gopkg.in/ini.v1"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -197,9 +199,48 @@ func createRepository(path string) {
 	}
 }
 
+func findRepository() GitRepository {
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	repository := new(GitRepository)
+	repository.init(wd)
+
+	return *repository
+}
+
 func catFile(objectType string, object string) {
-	fmt.Println(objectType)
-	fmt.Println(object)
+	repository := findRepository()
+
+	obj := readObject(repository, object)
+	fmt.Println(obj)
+}
+
+func readObject(repository GitRepository, sha string) string {
+	path := fmt.Sprintf("%s/objects/%s/%s", repository.GitDir, sha[0:2], sha[2:])
+
+	file, err := os.Open(path)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+
+	reader, err := zlib.NewReader(file)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+	defer reader.Close()
+
+	b, err := ioutil.ReadAll(reader)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+
+	return string(b)
 }
 
 type GitRepository struct {
