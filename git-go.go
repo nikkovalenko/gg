@@ -10,6 +10,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 )
 
 func main() {
@@ -39,7 +41,6 @@ func main() {
 		fmt.Printf("%s has been invoked\n", os.Args[1])
 	case "cat-file":
 		catFileCmd.Parse(os.Args[2:])
-		fmt.Printf("%s has been invoked\n", os.Args[1])
 		positionalArgs := catFileCmd.Args()
 		if len(positionalArgs) != 2 {
 			fmt.Println("wrong number of arguments")
@@ -240,7 +241,19 @@ func readObject(repository GitRepository, sha string) string {
 		os.Exit(1)
 	}
 
-	return string(b)
+	raw := string(b)
+	x := strings.Index(raw, " ")
+	y := strings.Index(raw, "\x00")
+	size, err := strconv.Atoi(raw[x+1 : y])
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if size != len(raw)-y-1 {
+		log.Fatal("incorrect object size")
+	}
+
+	return raw[y+1:]
 }
 
 type GitRepository struct {
