@@ -31,8 +31,7 @@ func main() {
 	tagCmd := flag.NewFlagSet("tag", flag.ExitOnError)
 
 	if len(os.Args) < 2 {
-		fmt.Println("expected a subcommand")
-		os.Exit(1)
+		log.Fatal("expected a subcommand")
 	}
 
 	switch os.Args[1] {
@@ -43,8 +42,7 @@ func main() {
 		catFileCmd.Parse(os.Args[2:])
 		positionalArgs := catFileCmd.Args()
 		if len(positionalArgs) != 2 {
-			fmt.Println("wrong number of arguments")
-			os.Exit(1)
+			log.Fatal("wrong number of arguments")
 		} else {
 			catFile(positionalArgs[0], positionalArgs[1])
 		}
@@ -70,8 +68,7 @@ func main() {
 		} else if len(positionalArgs) == 1 {
 			createRepository(positionalArgs[0])
 		} else {
-			fmt.Println("too many arguments")
-			os.Exit(1)
+			log.Fatal("too many arguments")
 		}
 	case "log":
 		logCmd.Parse(os.Args[2:])
@@ -98,8 +95,7 @@ func main() {
 		tagCmd.Parse(os.Args[2:])
 		fmt.Printf("%s has been invoked\n", os.Args[1])
 	default:
-		fmt.Printf("%s subcommand is not recognized\n", os.Args[1])
-		os.Exit(1)
+		log.Fatalf("%s subcommand is not recognized\n", os.Args[1])
 	}
 }
 
@@ -109,7 +105,7 @@ func createRepository(path string) {
 
 	_, err := os.Stat(repo.GitDir)
 	if !os.IsNotExist(err) {
-		log.Println(".git directory already exists")
+		log.Fatal(".git directory already exists")
 	} else {
 		objectsDir := fmt.Sprintf("%s/objects", repo.GitDir)
 		tagsDir := fmt.Sprintf("%s/refs/tags", repo.GitDir)
@@ -169,23 +165,23 @@ func createRepository(path string) {
 		_, err = coreSection.NewKey("repositoryformatverion", "0")
 		if err != nil {
 			log.Fatal(err)
-
 		}
+
 		_, err = coreSection.NewKey("filemode", "true")
 		if err != nil {
 			log.Fatal(err)
-
 		}
+
 		_, err = coreSection.NewKey("bare", "false")
 		if err != nil {
 			log.Fatal(err)
-
 		}
+
 		_, err = coreSection.NewKey("logallrefupdates", "true")
 		if err != nil {
 			log.Fatal(err)
-
 		}
+
 		_, err = coreSection.NewKey("ignorecase", "true")
 		if err != nil {
 			log.Fatal(err)
@@ -225,20 +221,17 @@ func readObject(repository GitRepository, sha string) string {
 	file, err := os.Open(path)
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(1)
 	}
 
 	reader, err := zlib.NewReader(file)
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(1)
 	}
 	defer reader.Close()
 
 	b, err := ioutil.ReadAll(reader)
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(1)
 	}
 
 	raw := string(b)
