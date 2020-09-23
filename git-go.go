@@ -196,23 +196,32 @@ func createRepository(path string) {
 	}
 }
 
-func findRepository() GitRepository {
-	wd, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
+func findRepository(path string) GitRepository {
+	_, err := os.Stat(fmt.Sprintf("%s/.git", path))
+	if os.IsNotExist(err) {
+		parent := filepath.Dir(path)
+		if parent == path {
+			log.Fatal("not a git repository")
+		} else {
+			return findRepository(parent)
+		}
 	}
 
 	repository := new(GitRepository)
-	repository.init(wd)
+	repository.init(path)
 
 	return *repository
 }
 
 func catFile(objectType string, object string) {
-	repository := findRepository()
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	repository := findRepository(wd)
 
 	obj := readObject(repository, object)
-	fmt.Println(obj)
+	fmt.Print(obj)
 }
 
 func readObject(repository GitRepository, sha string) string {
