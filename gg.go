@@ -3,9 +3,12 @@ package main
 import (
 	"bufio"
 	"compress/zlib"
+	"crypto/sha1"
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"gopkg.in/ini.v1"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -256,6 +259,41 @@ func readObject(repository GitRepository, sha string) string {
 	}
 
 	return raw[y+1:]
+}
+
+func writeObject(objType string, obj string) {
+	hash := sha1.New()
+
+	result := fmt.Sprintf("%s %s\x00%s", objType, strconv.Itoa(len(obj)), obj)
+	io.WriteString(hash, result)
+	hex :=hex.EncodeToString(hash.Sum(nil))
+
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	repository := findRepository(wd)
+
+	objDirPath := fmt.Sprintf("%s/objects/%s", repository.GitDir, hex[0:2])
+	objFilePath := fmt.Sprintf("%s/objects/%s/%s", repository.GitDir, hex[0:2], hex[2:])
+
+	err = os.MkdirAll(objDirPath, 0755)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	file, err := os.Create(objFilePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	writer:= zlib.NewWriter(file)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer writer.Close()
+
+	writer.Write([]byte(result))
 }
 
 type GitRepository struct {
